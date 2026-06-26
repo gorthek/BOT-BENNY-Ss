@@ -61,8 +61,8 @@ module.exports = {
 
         if (customId === 'ticket_recrutement' || customId === 'ticket_question') {
             const ticketType = customId === 'ticket_recrutement' ? 'recrutement' : 'question';
-            const categoryId = process.env.TICKET_CATEGORY_ID;
-            const staffRoleId = process.env.STAFF_ROLE_ID;
+            const categoryId = '1520024622328713236';
+            const staffRoleId = '1519791891611127919';
 
             await interaction.reply({ content: '⏳ Création de votre ticket...', ephemeral: true });
 
