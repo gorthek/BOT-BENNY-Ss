@@ -52,7 +52,9 @@ module.exports = {
             );
 
             const bilanChannelId = '1520077010498748598';
-            const bilanChannel = guild.channels.cache.get(bilanChannelId);
+            
+            // 🎯 RECONSTRUCTION ICI : On force la récupération du salon via l'API Discord
+            const bilanChannel = await guild.channels.fetch(bilanChannelId).catch(() => null);
 
             weeklyLogs.push({ user: user.tag, id: user.id, duration: `${hours}h ${minutes}m`, date: new Date().toLocaleDateString('fr-FR') });
 
@@ -61,6 +63,8 @@ module.exports = {
                     content: `<@${user.id}> Fin de service ! Temps: **${hours}h ${minutes}m**.\nVeuillez envoyer votre fichier \`.txt\` de bilan ici, ou cliquez sur Ignorer.`,
                     components: [skipRow]
                 });
+            } else {
+                console.error(`[ERREUR] Impossible de trouver le salon des bilans avec l'ID: ${bilanChannelId}`);
             }
 
             return interaction.reply({ content: '🔴 Fin de service validée. Rendez-vous dans le salon des bilans.', ephemeral: true });
@@ -71,10 +75,14 @@ module.exports = {
         // ==========================================
         if (customId === 'skip_bilan') {
             const reportChannelId = '1520076866973597826';
-            const reportChannel = guild.channels.cache.get(reportChannelId);
+            
+            // 🎯 RECONSTRUCTION ICI AUSSI : Sécurisation du salon de logs de la direction
+            const reportChannel = await guild.channels.fetch(reportChannelId).catch(() => null);
             
             if (reportChannel) {
                 await reportChannel.send(`⚠️ L'employé <@${user.id}> a ignoré le dépôt de son fichier bilan journalier.`);
+            } else {
+                console.error(`[ERREUR] Impossible de trouver le salon de rapport avec l'ID: ${reportChannelId}`);
             }
             
             await interaction.message.delete().catch(() => {});
