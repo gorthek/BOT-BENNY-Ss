@@ -121,7 +121,7 @@ module.exports = {
             fs.writeFileSync(filePath, htmlContent);
 
             // Envoi dans le salon des logs
-            const logChannelId = process.env.LOG_CHANNEL_ID || 'ID_SALON_LOGS';
+            const logChannelId = process.env.LOG_CHANNEL_ID || '1520077010498748598';
             const logChannel = message.guild.channels.cache.get(logChannelId); 
             
             if (logChannel) {
