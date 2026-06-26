@@ -1,5 +1,8 @@
 const { EmbedBuilder, PermissionsBitField } = require('discord.js');
 
+// 🎯 METS L'ID DE TON SALON LOGS-MODERATION ICI :
+const SANCTION_CHANNEL_ID = 'TON_ID_DE_SALON_ICI'; 
+
 module.exports = {
     name: 'kick',
     async execute(message, args, client) {
@@ -13,6 +16,7 @@ module.exports = {
 
         const reason = args.slice(1).join(' ') || 'Aucune raison fournie';
 
+        // On kick le joueur
         await target.kick(reason).catch(console.error);
 
         const embed = new EmbedBuilder()
@@ -25,6 +29,16 @@ module.exports = {
             )
             .setTimestamp();
 
-        return message.channel.send({ embeds: [embed] });
+        // 🚀 Envoi direct de l'embed dans le salon de sanction
+        const logChannel = await message.guild.channels.fetch(SANCTION_CHANNEL_ID).catch(() => null);
+        if (logChannel) {
+            await logChannel.send({ embeds: [embed] }).catch(console.error);
+        } else {
+            console.error(`[ERREUR] Salon de sanction introuvable (ID: ${SANCTION_CHANNEL_ID})`);
+        }
+
+        await message.delete().catch(() => {});
+        return message.channel.send(`👢 **${target.user.username}** a été expulsé. Log envoyé dans <#${SANCTION_CHANNEL_ID}>.`)
+            .then(m => setTimeout(() => m.delete().catch(() => {}), 5000));
     }
 };
