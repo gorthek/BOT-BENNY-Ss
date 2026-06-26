@@ -16,7 +16,6 @@ module.exports = {
 
         const reason = args.slice(1).join(' ') || 'Aucune raison fournie';
 
-        // On kick le joueur
         await target.kick(reason).catch(console.error);
 
         const embed = new EmbedBuilder()
@@ -29,16 +28,13 @@ module.exports = {
             )
             .setTimestamp();
 
-        // 🚀 Envoi direct de l'embed dans le salon de sanction
         const logChannel = await message.guild.channels.fetch(SANCTION_CHANNEL_ID).catch(() => null);
         if (logChannel) {
             await logChannel.send({ embeds: [embed] }).catch(console.error);
-        } else {
-            console.error(`[ERREUR] Salon de sanction introuvable (ID: ${SANCTION_CHANNEL_ID})`);
         }
 
         await message.delete().catch(() => {});
-        return message.channel.send(`👢 **${target.user.username}** a été expulsé. Log envoyé dans <#${SANCTION_CHANNEL_ID}>.`)
+        return message.channel.send(`👢 **${target.user.username}** a été expulsé.`)
             .then(m => setTimeout(() => m.delete().catch(() => {}), 5000));
     }
 };
