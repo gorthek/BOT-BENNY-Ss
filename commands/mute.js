@@ -1,0 +1,39 @@
+const { EmbedBuilder, PermissionsBitField } = require('discord.js');
+
+module.exports = {
+    name: 'mute',
+    async execute(message, args, client) {
+        if (!message.member.permissions.has(PermissionsBitField.Flags.ModerateMembers)) {
+            return message.reply('❌ Vous n\'avez pas la permission d\'isoler (mute) des membres.');
+        }
+
+        const target = message.mentions.members.first();
+        if (!target) return message.reply('❌ Veuillez mentionner le membre à mute.');
+
+        const durationMinutes = parseInt(args[1]);
+        if (!durationMinutes || isNaN(durationMinutes)) {
+            return message.reply('❌ Durée invalide ! Spécifiez le temps en minutes.\n**Exemple :** `+mute @pseudo 10 Raison`');
+        }
+
+        const reason = args.slice(2).join(' ') || 'Aucune raison fournie';
+        const durationMs = durationMinutes * 60 * 1000;
+
+        await target.timeout(durationMs, reason).catch(err => {
+            console.error(err);
+            return message.reply('❌ Impossible d\'isoler ce membre.');
+        });
+
+        const embed = new EmbedBuilder()
+            .setTitle('🔇 Mise en Sourdine (Timeout)')
+            .setColor('#6c5ce7')
+            .addFields(
+                { name: '👤 Membre restreint', value: `${target.user.tag}`, inline: true },
+                { name: '⏳ Durée', value: `${durationMinutes} minute(s)`, inline: true },
+                { name: '🛡️ Modérateur', value: `<@${message.author.id}>`, inline: false },
+                { name: '📝 Raison', value: reason }
+            )
+            .setTimestamp();
+
+        return message.channel.send({ embeds: [embed] });
+    }
+};
