@@ -1,4 +1,4 @@
-const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType, PermissionsBitField } = require('discord.js');
+const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType, PermissionsBitField, MessageFlags } = require('discord.js');
 const fs = require('fs');
 
 const activeServices = new Map();
@@ -19,14 +19,14 @@ module.exports = {
         // ==========================================
         if (customId === 'service_in') {
             if (activeServices.has(user.id)) {
-                return interaction.reply({ content: '❌ Vous êtes déjà en service !', ephemeral: true });
+                return interaction.reply({ content: '❌ Vous êtes déjà en service !', flags: [MessageFlags.Ephemeral] });
             }
             activeServices.set(user.id, Date.now());
 
             await member.roles.add(ROLE_EN_SERVICE).catch(console.error);
             await member.roles.remove(ROLE_HORS_SERVICE).catch(console.error);
 
-            return interaction.reply({ content: '✅ Bonne prise de service !', ephemeral: true });
+            return interaction.reply({ content: '✅ Bonne prise de service !', flags: [MessageFlags.Ephemeral] });
         }
 
         // ==========================================
@@ -34,7 +34,7 @@ module.exports = {
         // ==========================================
         if (customId === 'service_out') {
             if (!activeServices.has(user.id)) {
-                return interaction.reply({ content: '❌ Vous n\'êtes pas en service !', ephemeral: true });
+                return interaction.reply({ content: '❌ Vous n\'êtes pas en service !', flags: [MessageFlags.Ephemeral] });
             }
 
             const startTime = activeServices.get(user.id);
@@ -53,21 +53,22 @@ module.exports = {
 
             const bilanChannelId = '1520077010498748598';
             
-            // 🎯 RECONSTRUCTION ICI : On force la récupération du salon via l'API Discord
+            // 🎯 Forçage de la récupération (Fetch) pour éviter le problème de cache vide au démarrage
             const bilanChannel = await guild.channels.fetch(bilanChannelId).catch(() => null);
 
             weeklyLogs.push({ user: user.tag, id: user.id, duration: `${hours}h ${minutes}m`, date: new Date().toLocaleDateString('fr-FR') });
 
+            // 🛡️ Vérification de sécurité stricte : impossible de lire .send() sur du undefined ici
             if (bilanChannel) {
                 await bilanChannel.send({
                     content: `<@${user.id}> Fin de service ! Temps: **${hours}h ${minutes}m**.\nVeuillez envoyer votre fichier \`.txt\` de bilan ici, ou cliquez sur Ignorer.`,
                     components: [skipRow]
-                });
+                }).catch(console.error);
             } else {
-                console.error(`[ERREUR] Impossible de trouver le salon des bilans avec l'ID: ${bilanChannelId}`);
+                console.error(`[ERREUR] Salon des bilans introuvable (ID: ${bilanChannelId})`);
             }
 
-            return interaction.reply({ content: '🔴 Fin de service validée. Rendez-vous dans le salon des bilans.', ephemeral: true });
+            return interaction.reply({ content: '🔴 Fin de service validée. Rendez-vous dans le salon des bilans.', flags: [MessageFlags.Ephemeral] });
         }
 
         // ==========================================
@@ -75,18 +76,16 @@ module.exports = {
         // ==========================================
         if (customId === 'skip_bilan') {
             const reportChannelId = '1520076866973597826';
-            
-            // 🎯 RECONSTRUCTION ICI AUSSI : Sécurisation du salon de logs de la direction
             const reportChannel = await guild.channels.fetch(reportChannelId).catch(() => null);
             
             if (reportChannel) {
-                await reportChannel.send(`⚠️ L'employé <@${user.id}> a ignoré le dépôt de son fichier bilan journalier.`);
+                await reportChannel.send(`⚠️ L'employé <@${user.id}> a ignoré le dépôt de son fichier bilan journalier.`).catch(console.error);
             } else {
-                console.error(`[ERREUR] Impossible de trouver le salon de rapport avec l'ID: ${reportChannelId}`);
+                console.error(`[ERREUR] Salon de rapport introuvable (ID: ${reportChannelId})`);
             }
             
             await interaction.message.delete().catch(() => {});
-            return interaction.reply({ content: '✅ Bilan ignoré.', ephemeral: true }).catch(() => {});
+            return interaction.reply({ content: '✅ Bilan ignoré.', flags: [MessageFlags.Ephemeral] }).catch(() => {});
         }
 
         // ==========================================
@@ -101,7 +100,7 @@ module.exports = {
                 : '1520077108301402192'; 
 
             try {
-                await interaction.deferReply({ ephemeral: true });
+                await interaction.deferReply({ flags: [MessageFlags.Ephemeral] });
 
                 const channel = await guild.channels.create({
                     name: `${ticketType}-${user.username}`,
@@ -129,7 +128,7 @@ module.exports = {
                     .setColor('#0099ff')
                     .setTimestamp();
 
-                await channel.send({ content: `<@${user.id}> <@&${staffRoleId}>`, embeds: [embed] });
+                await channel.send({ content: `<@${user.id}> <@&${staffRoleId}>`, embeds: [embed] }).catch(console.error);
                 await interaction.editReply({ content: `✅ Votre ticket a été créé avec succès ici : <#${channel.id}>` });
 
             } catch (error) {
