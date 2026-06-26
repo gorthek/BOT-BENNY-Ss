@@ -1,7 +1,7 @@
 const { EmbedBuilder, PermissionsBitField } = require('discord.js');
 
 // 🎯 METS L'ID DE TON SALON LOGS-MODERATION ICI :
-const SANCTION_CHANNEL_ID = 'TON_ID_DE_SALON_ICI'; 
+const SANCTION_CHANNEL_ID = '1520092317241839718'; 
 
 module.exports = {
     name: 'mute',
