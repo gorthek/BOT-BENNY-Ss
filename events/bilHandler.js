@@ -4,7 +4,7 @@ module.exports = {
     name: 'messageCreate',
     async execute(message, client) {
         // ID du salon des bilans à configurer
-        const BILAN_CHANNEL_ID = process.env.BILAN_CHANNEL_ID || '1520040763738558534'; 
+        const BILAN_CHANNEL_ID = process.env.BILAN_CHANNEL_ID || '1520076766218031235'; 
 
         // On vérifie si on est dans le bon salon et si le message a une pièce jointe
         if (message.channel.id === BILAN_CHANNEL_ID && !message.author.bot) {
