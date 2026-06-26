@@ -17,6 +17,7 @@ module.exports = {
                         `\`${p}ban @membre [raison]\` ➜ Bannit un utilisateur définitivement.`,
                         `\`${p}kick @membre [raison]\` ➜ Expulse un utilisateur du serveur.`,
                         `\`${p}mute @membre [minutes] [raison]\` ➜ Met un utilisateur en sourdine (Timeout).`,
+                        `\`${p}unmute @membre [raison]\` ➜ Retire la sourdine d'un utilisateur.`,
                         `\`${p}clear [nombre]\` ➜ Supprime un nombre de messages défini.`,
                         `\`${p}nuke\` ➜ Réinitialise et purge entièrement le salon actuel.`
                     ].join('\n'),
