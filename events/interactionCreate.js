@@ -47,23 +47,26 @@ module.exports = {
             await member.roles.remove(ROLE_EN_SERVICE).catch(console.error);
             await member.roles.add(ROLE_HORS_SERVICE).catch(console.error);
 
+            // 🔒 SÉCURITÉ : On lie l'ID de l'employé au bouton pour le rendre unique
             const skipRow = new ActionRowBuilder().addComponents(
-                new ButtonBuilder().setCustomId('skip_bilan').setLabel('⏭️ Ignorer le fichier txt').setStyle(ButtonStyle.Secondary)
+                new ButtonBuilder().setCustomId(`skip_bilan_${user.id}`).setLabel('⏭️ Ignorer le fichier txt').setStyle(ButtonStyle.Secondary)
             );
 
             const bilanChannelId = '1520076766218031235';
-            
-            // 🎯 Forçage de la récupération (Fetch) pour éviter le problème de cache vide au démarrage
             const bilanChannel = await guild.channels.fetch(bilanChannelId).catch(() => null);
 
             weeklyLogs.push({ user: user.tag, id: user.id, duration: `${hours}h ${minutes}m`, date: new Date().toLocaleDateString('fr-FR') });
 
-            // 🛡️ Vérification de sécurité stricte : impossible de lire .send() sur du undefined ici
             if (bilanChannel) {
-                await bilanChannel.send({
+                const promptMessage = await bilanChannel.send({
                     content: `<@${user.id}> Fin de service ! Temps: **${hours}h ${minutes}m**.\nVeuillez envoyer votre fichier \`.txt\` de bilan ici, ou cliquez sur Ignorer.`,
                     components: [skipRow]
                 }).catch(console.error);
+
+                // On stocke l'ID du message pour pouvoir le supprimer automatiquement plus tard
+                if (client.pendingBilans && promptMessage) {
+                    client.pendingBilans.set(user.id, promptMessage.id);
+                }
             } else {
                 console.error(`[ERREUR] Salon des bilans introuvable (ID: ${bilanChannelId})`);
             }
@@ -72,9 +75,16 @@ module.exports = {
         }
 
         // ==========================================
-        // 3. IGNORER LE BILAN
+        // 3. IGNORER LE BILAN (Vérification d'identité)
         // ==========================================
-        if (customId === 'skip_bilan') {
+        if (customId.startsWith('skip_bilan_')) {
+            const expectedUserId = customId.replace('skip_bilan_', '');
+
+            // 🛑 Si quelqu'un d'autre clique sur le bouton, on le jette poliment
+            if (user.id !== expectedUserId) {
+                return interaction.reply({ content: '❌ Vous ne pouvez pas ignorer le bilan d\'un autre employé !', flags: [MessageFlags.Ephemeral] });
+            }
+
             const reportChannelId = '1520076866973597826';
             const reportChannel = await guild.channels.fetch(reportChannelId).catch(() => null);
             
@@ -84,12 +94,14 @@ module.exports = {
                 console.error(`[ERREUR] Salon de rapport introuvable (ID: ${reportChannelId})`);
             }
             
+            if (client.pendingBilans) client.pendingBilans.delete(user.id);
+            
             await interaction.message.delete().catch(() => {});
             return interaction.reply({ content: '✅ Bilan ignoré.', flags: [MessageFlags.Ephemeral] }).catch(() => {});
         }
 
         // ==========================================
-        // 4. CRÉATION DES TICKETS (RECRUTEMENT & QUESTION)
+        // 4. CRÉATION DES TICKETS
         // ==========================================
         if (customId === 'ticket_recrutement' || customId === 'ticket_question') {
             const ticketType = customId === 'ticket_recrutement' ? 'recrutement' : 'question';
