@@ -45,7 +45,7 @@ module.exports = {
                 new ButtonBuilder().setCustomId('skip_bilan').setLabel('⏭️ Ignorer le fichier txt').setStyle(ButtonStyle.Secondary)
             );
 
-            const bilanChannelId = '1520077010498748598';
+            const bilanChannelId = '1520076766218031235';
             const bilanChannel = interaction.guild.channels.cache.get(bilanChannelId);
 
             weeklyLogs.push({ user: user.tag, id: user.id, duration: `${hours}h ${minutes}m`, date: new Date().toLocaleDateString('fr-FR') });
