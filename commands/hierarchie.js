@@ -24,13 +24,13 @@ module.exports = {
         await guild.members.fetch();
 
         const roles = {
-            patron: 'ID_PATRON',
-            copatron: 'ID_COPATRON',
-            secretaire: 'ID_SECRETAIRE',
-            expert: 'ID_EXPERT',
-            mecano: 'ID_MECANO',
-            stagiaire: 'ID_STAGIAIRE',
-            employer: 'ID_EMPLOYER'
+            patron: '1519792201155215571',
+            copatron: '1519792269065191575',
+            secretaire: '1519792337784537118',
+            expert: '1519792572267233290',
+            mecano: '1519792760993873960',
+            stagiaire: '1519793223088869436',
+            employer: '1519820247866020004'
         };
 
         const getMembers = (roleId) => {
