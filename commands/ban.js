@@ -16,10 +16,8 @@ module.exports = {
 
         const reason = args.slice(1).join(' ') || 'Aucune raison fournie';
 
-        // On bannit le joueur
         await target.ban({ reason: reason }).catch(console.error);
 
-        // Création de l'embed large pour les logs
         const embed = new EmbedBuilder()
             .setTitle('🔨 Bannissement Définitif')
             .setColor('#d63031')
@@ -30,17 +28,13 @@ module.exports = {
             )
             .setTimestamp();
 
-        // 🚀 Envoi direct de l'embed dans le salon de sanction
         const logChannel = await message.guild.channels.fetch(SANCTION_CHANNEL_ID).catch(() => null);
         if (logChannel) {
             await logChannel.send({ embeds: [embed] }).catch(console.error);
-        } else {
-            console.error(`[ERREUR] Salon de sanction introuvable (ID: ${SANCTION_CHANNEL_ID})`);
         }
 
-        // Petit message de confirmation temporaire dans le salon actuel
         await message.delete().catch(() => {});
-        return message.channel.send(`✅ **${target.user.username}** a été banni définitivement. Log envoyé dans <#${SANCTION_CHANNEL_ID}>.`)
+        return message.channel.send(`✅ **${target.user.username}** a été banni définitivement.`)
             .then(m => setTimeout(() => m.delete().catch(() => {}), 5000));
     }
 };
