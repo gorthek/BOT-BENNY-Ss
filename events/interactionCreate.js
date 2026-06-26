@@ -62,7 +62,8 @@ module.exports = {
             const reportChannelId = '1520040831862571098';
             const reportChannel = interaction.guild.channels.cache.get(reportChannelId);
             await reportChannel.send(`⚠️ L'employé <@${user.id}> a ignoré le dépôt de son fichier bilan journalier.`);
-            await interaction.message.delete();
+            await interaction.message.delete().catch(() => {}); // ← ajoute juste le .catch
+            await interaction.reply({ content: '✅ Bilan ignoré.', ephemeral: true }).catch(() => {});
         }
 
         if (customId === 'ticket_recrutement' || customId === 'ticket_question') {
