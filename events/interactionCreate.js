@@ -1,9 +1,11 @@
 const { EmbedBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, ChannelType, PermissionsBitField } = require('discord.js');
 const fs = require('fs');
 
-// Base de données temporaire (En production, utiliser MongoDB si Clever Cloud redémarre souvent)
 const activeServices = new Map();
 const weeklyLogs = [];
+
+const ROLE_EN_SERVICE = '1520033859566309469';
+const ROLE_HORS_SERVICE = '1520033893879906384';
 
 module.exports = {
     name: 'interactionCreate',
@@ -17,8 +19,11 @@ module.exports = {
                 return interaction.reply({ content: '❌ Vous êtes déjà en service !', ephemeral: true });
             }
             activeServices.set(user.id, Date.now());
+
+            await interaction.member.roles.add(ROLE_EN_SERVICE).catch(console.error);
+            await interaction.member.roles.remove(ROLE_HORS_SERVICE).catch(console.error);
+
             await interaction.reply({ content: '✅ Bonne prise de service !', ephemeral: true });
-            // TODO: Mettre à jour l'embed "Employés en service" ici
         }
 
         if (customId === 'service_out') {
@@ -30,21 +35,22 @@ module.exports = {
             const durationMs = Date.now() - startTime;
             const hours = Math.floor(durationMs / (1000 * 60 * 60));
             const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
-            
+
             activeServices.delete(user.id);
 
-            // Logique de Bilan
+            await interaction.member.roles.remove(ROLE_EN_SERVICE).catch(console.error);
+            await interaction.member.roles.add(ROLE_HORS_SERVICE).catch(console.error);
+
             const skipRow = new ActionRowBuilder().addComponents(
                 new ButtonBuilder().setCustomId('skip_bilan').setLabel('⏭️ Ignorer le fichier txt').setStyle(ButtonStyle.Secondary)
             );
 
-            // On ping l'utilisateur dans un salon privé de bilans
-            const bilanChannelId = process.env.BILAN_CHANNEL_ID || '1520040763738558534';
+            const bilanChannelId = '1520040763738558534';
             const bilanChannel = interaction.guild.channels.cache.get(bilanChannelId);
-            
+
             weeklyLogs.push({ user: user.tag, id: user.id, duration: `${hours}h ${minutes}m`, date: new Date().toLocaleDateString('fr-FR') });
 
-            await bilanChannel.send({ 
+            await bilanChannel.send({
                 content: `<@${user.id}> Fin de service ! Temps: **${hours}h ${minutes}m**.\nVeuillez envoyer votre fichier \`.txt\` de bilan ici, ou cliquez sur Ignorer.`,
                 components: [skipRow]
             });
@@ -53,7 +59,7 @@ module.exports = {
         }
 
         if (customId === 'skip_bilan') {
-            const reportChannelId = process.env.REPORT_CHANNEL_ID || '1520040831862571098';
+            const reportChannelId = '1520040831862571098';
             const reportChannel = interaction.guild.channels.cache.get(reportChannelId);
             await reportChannel.send(`⚠️ L'employé <@${user.id}> a ignoré le dépôt de son fichier bilan journalier.`);
             await interaction.message.delete();
@@ -64,13 +70,13 @@ module.exports = {
             const categoryId = '1520024622328713236';
             const staffRoleId = '1519791891611127919';
 
-            await interaction.reply({ content: '⏳ Création de votre ticket...', ephemeral: true });
-
             try {
+                await interaction.deferReply({ ephemeral: true });
+
                 const channel = await interaction.guild.channels.create({
                     name: `${ticketType}-${user.username}`,
                     type: ChannelType.GuildText,
-                    parent: categoryId || null,
+                    parent: categoryId,
                     permissionOverwrites: [
                         {
                             id: interaction.guild.id,
@@ -80,10 +86,10 @@ module.exports = {
                             id: user.id,
                             allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory],
                         },
-                        ...(staffRoleId ? [{
+                        {
                             id: staffRoleId,
                             allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory],
-                        }] : [])
+                        }
                     ],
                 });
 
@@ -93,11 +99,14 @@ module.exports = {
                     .setColor('#0099ff')
                     .setTimestamp();
 
-                await channel.send({ content: `<@${user.id}> ${staffRoleId ? `<@&${staffRoleId}>` : ''}`, embeds: [embed] });
+                await channel.send({ content: `<@${user.id}> <@&${staffRoleId}>`, embeds: [embed] });
                 await interaction.editReply({ content: `✅ Votre ticket a été créé : <#${channel.id}>` });
+
             } catch (error) {
                 console.error(error);
-                await interaction.editReply({ content: '❌ Erreur lors de la création du ticket. Vérifiez les permissions du bot et les IDs dans le .env.' });
+                if (error.code !== 10062) {
+                    await interaction.editReply({ content: '❌ Erreur lors de la création du ticket.' }).catch(() => {});
+                }
             }
         }
     }
