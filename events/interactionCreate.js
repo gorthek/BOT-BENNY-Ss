@@ -51,7 +51,7 @@ module.exports = {
                 new ButtonBuilder().setCustomId('skip_bilan').setLabel('⏭️ Ignorer le fichier txt').setStyle(ButtonStyle.Secondary)
             );
 
-            const bilanChannelId = '1520077010498748598';
+            const bilanChannelId = '1520076766218031235';
             
             // 🎯 Forçage de la récupération (Fetch) pour éviter le problème de cache vide au démarrage
             const bilanChannel = await guild.channels.fetch(bilanChannelId).catch(() => null);
