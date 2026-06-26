@@ -45,7 +45,7 @@ module.exports = {
                 new ButtonBuilder().setCustomId('skip_bilan').setLabel('⏭️ Ignorer le fichier txt').setStyle(ButtonStyle.Secondary)
             );
 
-            const bilanChannelId = '1520040763738558534';
+            const bilanChannelId = '1520077010498748598';
             const bilanChannel = interaction.guild.channels.cache.get(bilanChannelId);
 
             weeklyLogs.push({ user: user.tag, id: user.id, duration: `${hours}h ${minutes}m`, date: new Date().toLocaleDateString('fr-FR') });
@@ -59,7 +59,7 @@ module.exports = {
         }
 
         if (customId === 'skip_bilan') {
-            const reportChannelId = '1520040831862571098';
+            const reportChannelId = '1520076866973597826';
             const reportChannel = interaction.guild.channels.cache.get(reportChannelId);
             await reportChannel.send(`⚠️ L'employé <@${user.id}> a ignoré le dépôt de son fichier bilan journalier.`);
             await interaction.message.delete().catch(() => {}); // ← ajoute juste le .catch
@@ -67,32 +67,52 @@ module.exports = {
         }
 
         if (customId === 'ticket_recrutement' || customId === 'ticket_question') {
-            const ticketType = customId === 'ticket_recrutement' ? 'recrutement' : 'question';
-            const categoryId = '1520024622328713236';
-            const staffRoleId = '1519791891611127919';
+    const ticketType = customId === 'ticket_recrutement' ? 'recrutement' : 'question';
+    const staffRoleId = '1519791891611127919';
 
-            try {
-                await interaction.deferReply({ ephemeral: true });
+    // 🟢 ON CHOISIT LA BONNE CATÉGORIE DYNAMIQUEMENT
+    const parentCategory = customId === 'ticket_recrutement' 
+        ? '1520077067058679809'  // ID Recrutement
+        : '1520077108301402192'; // ID Question
 
-                const channel = await interaction.guild.channels.create({
-                    name: `${ticketType}-${user.username}`,
-                    type: ChannelType.GuildText,
-                    parent: categoryId,
-                    permissionOverwrites: [
-                        {
-                            id: interaction.guild.id,
-                            deny: [PermissionsBitField.Flags.ViewChannel],
-                        },
-                        {
-                            id: user.id,
-                            allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory],
-                        },
-                        {
-                            id: staffRoleId,
-                            allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory],
-                        }
-                    ],
-                });
+    try {
+        // On differe la réponse (UNE SEULE FOIS) pour éviter le timeout des 3 secondes
+        await interaction.deferReply({ ephemeral: true });
+
+        // On crée le salon en utilisant la variable "parentCategory"
+        const channel = await interaction.guild.channels.create({
+            name: `${ticketType}-${interaction.user.username}`, // Remplacement de user par interaction.user pour la sécurité
+            type: ChannelType.GuildText,
+            parent: parentCategory, // S'applique automatiquement ici
+            permissionOverwrites: [
+                {
+                    id: interaction.guild.id,
+                    deny: [PermissionsBitField.Flags.ViewChannel],
+                },
+                {
+                    id: interaction.user.id,
+                    allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory],
+                },
+                {
+                    id: staffRoleId,
+                    allow: [PermissionsBitField.Flags.ViewChannel, PermissionsBitField.Flags.SendMessages, PermissionsBitField.Flags.ReadMessageHistory],
+                }
+            ],
+        });
+
+        // Message d'accueil à l'intérieur du ticket tout juste créé
+        await channel.send(`👋 Bonjour <@${interaction.user.id}>, bienvenue dans votre ticket de **${ticketType}**.\nLe staff <@&${staffRoleId}> va s'occuper de vous d'ici quelques instants.`);
+
+        // On confirme à l'utilisateur que son ticket est ouvert
+        await interaction.editReply({ content: `✅ Votre ticket a été créé avec succès ici : <#${channel.id}>` });
+
+    } catch (error) {
+        console.error("Erreur lors de la création du ticket :", error);
+        if (interaction.deferred) {
+            await interaction.editReply({ content: '❌ Une erreur est survenue lors de la création de votre ticket.' });
+        }
+    }
+}
 
                 const embed = new EmbedBuilder()
                     .setTitle(`Ticket de ${ticketType}`)
