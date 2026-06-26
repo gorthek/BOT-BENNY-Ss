@@ -48,4 +48,6 @@ for (const file of eventFiles) {
     }
 }
 
+client.pendingBilans = new Map();
+
 client.login(process.env.TOKEN);
